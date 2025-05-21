@@ -12,11 +12,25 @@ const Sidebar = ({ onClose }) => {
   const { currentDate, setCurrentDate } = useCalendar();
   const [miniCalMonth, setMiniCalMonth] = useState(currentDate);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [viewMode, setViewMode] = useState("calendar"); // calendar | month | year
+  const sidebarRef = useRef(null);
   const dropdownRef = useRef(null);
 
-  const handleToday = () => setCurrentDate(dayjs().startOf("day"));
-  const handlePrev = () => setCurrentDate(currentDate.subtract(1, "month"));
-  const handleNext = () => setCurrentDate(currentDate.add(1, "month"));
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose]);
+
+  const handleToday = () => {
+    const today = dayjs().startOf("day");
+    setCurrentDate(today);
+    setMiniCalMonth(today);
+  };
 
   const startDay = miniCalMonth.startOf("month").startOf("week");
   const endDay = miniCalMonth.endOf("month").endOf("week");
@@ -28,135 +42,203 @@ const Sidebar = ({ onClose }) => {
     day = day.add(1, "day");
   }
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  return (
-    <div
-      className="position-fixed top-0 start-0 bg-dark text-white shadow"
-      style={{
-        width: "250px",
-        height: "100vh",
-        zIndex: 1050,
-        transition: "transform 0.3s ease-in-out",
-        overflowY: "auto",
-      }}
-    >
-      {/* Close button */}
-      <div className="d-flex justify-content-end p-2">
-        <button className="btn btn-outline-light btn-sm" onClick={onClose}>
-          <i className="bi bi-x-lg"></i>
-        </button>
-      </div>
-
-      {/* Create Dropdown */}
-      <div className="px-3 mb-3" ref={dropdownRef}>
-        <div className="dropdown w-100">
-          <button
-            className="btn btn-dark w-100 d-flex justify-content-between align-items-center border rounded-3 px-3 py-2"
-            onClick={() => setShowDropdown(!showDropdown)}
-          >
-            <span>
-              <i className="bi bi-plus me-2"></i>Create
-            </span>
-            <i className="bi bi-caret-down-fill"></i>
-          </button>
-
-          {showDropdown && (
-            <div
-              className="dropdown-menu show bg-dark border-0 mt-1"
-              style={{ display: "block", width: "100%" }}
-            >
-              <button className="dropdown-item text-white" style={{ backgroundColor: "transparent" }}>
-                Event
-              </button>
-              <button className="dropdown-item text-white" style={{ backgroundColor: "transparent" }}>
-                Task
-              </button>
-              <button className="dropdown-item text-white" style={{ backgroundColor: "transparent" }}>
-                Appointment schedule
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Navigation buttons */}
-      <div className="px-3 d-flex justify-content-between mb-3">
-        <button className="btn btn-outline-light btn-sm" onClick={handleToday}>
-          Today
-        </button>
-        <div>
-          <button className="btn btn-light btn-sm me-1" onClick={handlePrev}>
-            <i className="bi bi-chevron-left"></i>
-          </button>
-          <button className="btn btn-light btn-sm" onClick={handleNext}>
-            <i className="bi bi-chevron-right"></i>
-          </button>
-        </div>
-      </div>
-
-      {/* Mini Calendar */}
-      <div className="px-3">
-        <div className="d-flex justify-content-between align-items-center mb-2">
+  const renderMonthYearHeader = () => {
+    if (viewMode === "calendar") {
+      return (
+        <div
+          className="d-flex justify-content-between align-items-center mb-2"
+          onClick={() => setViewMode("month")}
+          style={{ cursor: "pointer" }}
+        >
           <i
             className="bi bi-chevron-left"
-            style={{ cursor: "pointer" }}
-            onClick={() => setMiniCalMonth(miniCalMonth.subtract(1, "month"))}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMiniCalMonth(miniCalMonth.subtract(1, "month"));
+            }}
           ></i>
           <span>{miniCalMonth.format("MMMM YYYY")}</span>
           <i
             className="bi bi-chevron-right"
-            style={{ cursor: "pointer" }}
-            onClick={() => setMiniCalMonth(miniCalMonth.add(1, "month"))}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMiniCalMonth(miniCalMonth.add(1, "month"));
+            }}
           ></i>
         </div>
+      );
+    } else if (viewMode === "month") {
+      return (
+        <div
+          className="text-center fw-bold mb-2"
+          onClick={() => setViewMode("year")}
+          style={{ cursor: "pointer" }}
+        >
+          {miniCalMonth.year()}
+        </div>
+      );
+    } else if (viewMode === "year") {
+      return <div className="text-center fw-bold mb-2">Select Year</div>;
+    }
+  };
 
-        <div className="d-flex justify-content-between mb-1 text-center fw-bold">
-          {["S", "M", "T", "W", "T", "F", "S"].map((d) => (
-            <div key={d} style={{ width: "14.2%" }}>
-              {d}
-            </div>
-          ))}
+  const renderMonthPicker = () => {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    return (
+      <div className="d-flex flex-wrap text-center">
+        {months.map((month, idx) => (
+          <div
+            key={month}
+            className="p-2"
+            style={{
+              width: "33.33%",
+              padding: "8px 0",
+              cursor: "pointer",
+              color: miniCalMonth.month() === idx ? "#1a73e8" : "#202124",
+              fontWeight: miniCalMonth.month() === idx ? "bold" : "normal",
+              borderRadius: "4px",
+              backgroundColor: miniCalMonth.month() === idx ? "#e8f0fe" : "transparent",
+            }}
+            onClick={() => {
+              setMiniCalMonth(miniCalMonth.month(idx));
+              setViewMode("calendar");
+            }}
+          >
+            {month}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderYearPicker = () => {
+    const currentYear = dayjs().year();
+    const years = Array.from({ length: 21 }, (_, i) => currentYear - 10 + i);
+    return (
+      <div className="d-flex flex-wrap text-center">
+        {years.map((year) => (
+          <div
+            key={year}
+            className="p-2"
+            style={{
+              width: "33.33%",
+              cursor: "pointer",
+              color: miniCalMonth.year() === year ? "#1a73e8" : "#202124",
+              fontWeight: miniCalMonth.year() === year ? "bold" : "normal",
+              borderRadius: "4px",
+              backgroundColor: miniCalMonth.year() === year ? "#e8f0fe" : "transparent",
+            }}
+            onClick={() => {
+              setMiniCalMonth(miniCalMonth.year(year));
+              setViewMode("month");
+            }}
+          >
+            {year}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="position-fixed top-0 start-0 w-100 h-100" style={{ zIndex: 1050 }}>
+      {/* Overlay */}
+      <div className="position-absolute top-0 start-0 w-100 h-100" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}></div>
+
+      {/* Sidebar */}
+      <div
+        className="bg-white text-dark border-end position-absolute top-0 start-0"
+        style={{ width: "280px", height: "100vh", overflowY: "auto" }}
+        ref={sidebarRef}
+      >
+        {/* Create Dropdown */}
+        <div className="px-3 mt-3 mb-2" ref={dropdownRef}>
+          <div className="dropdown w-100">
+            <button
+              className="btn btn-primary w-100 d-flex justify-content-between align-items-center rounded-3 px-3 py-2"
+              style={{ backgroundColor: "#1a73e8", borderColor: "#1a73e8" }}
+              onClick={() => setShowDropdown(!showDropdown)}
+            >
+              <span>
+                <i className="bi bi-plus me-2"></i>Create
+              </span>
+              <i className="bi bi-caret-down-fill"></i>
+            </button>
+
+            {showDropdown && (
+              <div className="dropdown-menu show shadow-sm mt-1" style={{ width: "100%", backgroundColor: "#fff", color: "#333" }}>
+                <button className="dropdown-item">Event</button>
+                <button className="dropdown-item">Task</button>
+                <button className="dropdown-item">Appointment schedule</button>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="d-flex flex-wrap text-center">
-          {calendarDays.map((d, i) => {
-            const isToday = d.isSame(dayjs(), "day");
-            const isCurrentMonth = d.month() === miniCalMonth.month();
-            return (
-              <div
-                key={i}
-                className="rounded"
-                style={{
-                  width: "14.2%",
-                  padding: "4px 0",
-                  cursor: "pointer",
-                  background: isToday ? "#4A90E2" : "transparent",
-                  color: isToday
-                    ? "white"
-                    : isCurrentMonth
-                    ? "inherit"
-                    : "#bbb",
-                }}
-                onClick={() => {
-                  setCurrentDate(d);
-                  if (window.innerWidth < 576) {
-                    onClose(); // Auto close on mobile
-                  }
-                }}
-              >
-                {d.date()}
+        {/* Today Button */}
+        <div className="px-3 mb-3">
+          <button className="btn btn-outline-secondary btn-sm w-100" onClick={handleToday}>
+            Today
+          </button>
+        </div>
+
+        {/* Mini Calendar */}
+        <div className="px-3">
+          {renderMonthYearHeader()}
+
+          {viewMode === "calendar" && (
+            <>
+              <div className="d-flex justify-content-between mb-1 text-center fw-bold">
+                {["S", "M", "T", "W", "T", "F", "S"].map((d) => (
+                  <div key={d} style={{ width: "14.2%" }}>{d}</div>
+                ))}
               </div>
-            );
-          })}
+
+              <div className="d-flex flex-wrap text-center">
+                {calendarDays.map((d, i) => {
+                  const isToday = d.isSame(dayjs(), "day");
+                  const isCurrentMonth = d.month() === miniCalMonth.month();
+                  const isSelected = d.isSame(currentDate, "day");
+                  return (
+                    <div
+                      key={i}
+                      className="rounded-circle mx-auto my-1"
+                      style={{
+                        width: "14.2%",
+                        padding: "6px 0",
+                        cursor: "pointer",
+                        backgroundColor: isToday
+                          ? "#1a73e8"
+                          : isSelected
+                          ? "#e8f0fe"
+                          : "transparent",
+                        color: isToday
+                          ? "white"
+                          : isSelected
+                          ? "#1a73e8"
+                          : isCurrentMonth
+                          ? "#202124"
+                          : "#dadce0",
+                        fontWeight: isToday || isSelected ? "bold" : "normal",
+                      }}
+                      onClick={() => {
+                        setCurrentDate(d);
+                        if (window.innerWidth < 576) {
+                          onClose();
+                        }
+                      }}
+                    >
+                      {d.date()}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {viewMode === "month" && renderMonthPicker()}
+          {viewMode === "year" && renderYearPicker()}
         </div>
       </div>
     </div>
