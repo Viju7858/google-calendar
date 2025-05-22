@@ -14,6 +14,7 @@ const SmallCal = () => {
   const { currentDate, setCurrentDate } = useCalendar();
   const [showMiniCal, setShowMiniCal] = useState(false);
   const [miniCalMonth, setMiniCalMonth] = useState(currentDate);
+  const [miniCalView, setMiniCalView] = useState("date"); // 'date' | 'month' | 'year'
   const [showSidebar, setShowSidebar] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const miniCalRef = useRef(null);
@@ -36,6 +37,7 @@ const SmallCal = () => {
     const handleClickOutside = (event) => {
       if (miniCalRef.current && !miniCalRef.current.contains(event.target)) {
         setShowMiniCal(false);
+        setMiniCalView("date");
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -71,7 +73,6 @@ const SmallCal = () => {
               className="btn btn-outline-primary btn-sm"
               onClick={() => {
                 console.log("All Events clicked");
-                // You can trigger a modal or navigation here
               }}
             >
               All Events
@@ -79,17 +80,17 @@ const SmallCal = () => {
 
             <div className="d-flex align-items-center ms-2">
               <button
-  className="btn btn-light btn-sm me-1 custom-circle-btn"
-  onClick={handlePrev}
->
-  <i className="bi bi-chevron-left"></i>
-</button>
-<button
-  className="btn btn-light btn-sm me-2 custom-circle-btn"
-  onClick={handleNext}
->
-  <i className="bi bi-chevron-right"></i>
-</button>
+                className="btn btn-light btn-sm me-1 custom-circle-btn"
+                onClick={handlePrev}
+              >
+                <i className="bi bi-chevron-left"></i>
+              </button>
+              <button
+                className="btn btn-light btn-sm me-2 custom-circle-btn"
+                onClick={handleNext}
+              >
+                <i className="bi bi-chevron-right"></i>
+              </button>
             </div>
 
             <span
@@ -135,54 +136,145 @@ const SmallCal = () => {
           <div className="d-flex justify-content-between align-items-center mb-2">
             <i
               className="bi bi-chevron-left"
-              onClick={() => setMiniCalMonth(miniCalMonth.subtract(1, "month"))}
+              onClick={() => {
+                if (miniCalView === "date")
+                  setMiniCalMonth(miniCalMonth.subtract(1, "month"));
+                else if (miniCalView === "month")
+                  setMiniCalMonth(miniCalMonth.subtract(1, "year"));
+                else if (miniCalView === "year")
+                  setMiniCalMonth(miniCalMonth.subtract(12, "year"));
+              }}
               style={{ cursor: "pointer" }}
             ></i>
-            <span>{miniCalMonth.format("MMMM YYYY")}</span>
+
+            <span
+              style={{ cursor: "pointer" }}
+              onClick={() => {
+                if (miniCalView === "date") setMiniCalView("month");
+                else if (miniCalView === "month") setMiniCalView("year");
+              }}
+            >
+              {miniCalView === "date"
+                ? miniCalMonth.format("MMMM YYYY")
+                : miniCalView === "month"
+                ? miniCalMonth.format("YYYY")
+                : `${miniCalMonth.year() - 6} - ${miniCalMonth.year() + 5}`}
+            </span>
+
             <i
               className="bi bi-chevron-right"
-              onClick={() => setMiniCalMonth(miniCalMonth.add(1, "month"))}
+              onClick={() => {
+                if (miniCalView === "date")
+                  setMiniCalMonth(miniCalMonth.add(1, "month"));
+                else if (miniCalView === "month")
+                  setMiniCalMonth(miniCalMonth.add(1, "year"));
+                else if (miniCalView === "year")
+                  setMiniCalMonth(miniCalMonth.add(12, "year"));
+              }}
               style={{ cursor: "pointer" }}
             ></i>
           </div>
 
-          <div className="d-flex justify-content-between mb-1 text-center fw-bold">
-            {["S", "M", "T", "W", "T", "F", "S"].map((d) => (
-              <div key={d} style={{ width: "14.2%" }}>
-                {d}
+          {/* Days View */}
+          {miniCalView === "date" && (
+            <>
+              <div className="d-flex justify-content-between mb-1 text-center fw-bold">
+                {["S", "M", "T", "W", "T", "F", "S"].map((d) => (
+                  <div key={d} style={{ width: "14.2%" }}>
+                    {d}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <div className="d-flex flex-wrap text-center">
-            {calendarDays.map((d, i) => {
-              const isToday = d.isSame(dayjs(), "day");
-              const isCurrentMonth = d.month() === miniCalMonth.month();
-              return (
+              <div className="d-flex flex-wrap text-center">
+                {calendarDays.map((d, i) => {
+                  const isToday = d.isSame(dayjs(), "day");
+                  const isCurrentMonth = d.month() === miniCalMonth.month();
+                  return (
+                    <div
+                      key={i}
+                      className="rounded"
+                      style={{
+                        width: "14.2%",
+                        padding: window.innerWidth < 576 ? "2px 0" : "4px 0",
+                        cursor: "pointer",
+                        background: isToday ? "#4A90E2" : "transparent",
+                        color: isToday
+                          ? "white"
+                          : isCurrentMonth
+                          ? "inherit"
+                          : "#bbb",
+                      }}
+                      onClick={() => {
+                        setCurrentDate(d);
+                        setShowMiniCal(false);
+                        setMiniCalView("date");
+                      }}
+                    >
+                      {d.date()}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {/* Month View */}
+          {miniCalView === "month" && (
+            <div className="d-flex flex-wrap text-center">
+              {dayjs.monthsShort || ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((month, idx) => (
                 <div
-                  key={i}
-                  className="rounded"
+                  key={month}
+                  className="rounded m-1 p-2"
                   style={{
-                    width: "14.2%",
-                    padding: window.innerWidth < 576 ? "2px 0" : "4px 0",
+                    width: "30%",
                     cursor: "pointer",
-                    background: isToday ? "#4A90E2" : "transparent",
-                    color: isToday
-                      ? "white"
-                      : isCurrentMonth
-                      ? "inherit"
-                      : "#bbb",
+                    background:
+                      idx === miniCalMonth.month() ? "#4A90E2" : "transparent",
+                    color:
+                      idx === miniCalMonth.month() ? "white" : "inherit",
                   }}
                   onClick={() => {
-                    setCurrentDate(d);
-                    setShowMiniCal(false);
+                    setMiniCalMonth(miniCalMonth.month(idx));
+                    setMiniCalView("date");
                   }}
                 >
-                  {d.date()}
+                  {month}
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
+
+          {/* Year View */}
+          {miniCalView === "year" && (
+            <div className="d-flex flex-wrap text-center">
+              {Array.from({ length: 12 }, (_, i) => {
+                const year = miniCalMonth.year() - 6 + i;
+                return (
+                  <div
+                    key={year}
+                    className="rounded m-1 p-2"
+                    style={{
+                      width: "30%",
+                      cursor: "pointer",
+                      background:
+                        year === miniCalMonth.year()
+                          ? "#4A90E2"
+                          : "transparent",
+                      color:
+                        year === miniCalMonth.year() ? "white" : "inherit",
+                    }}
+                    onClick={() => {
+                      setMiniCalMonth(miniCalMonth.year(year));
+                      setMiniCalView("month");
+                    }}
+                  >
+                    {year}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
