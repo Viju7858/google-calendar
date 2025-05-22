@@ -79,17 +79,17 @@ const SmallCal = () => {
 
             <div className="d-flex align-items-center ms-2">
               <button
-                className="btn btn-light btn-sm me-1 rounded-circle p-1"
-                onClick={handlePrev}
-              >
-                <i className="bi bi-chevron-left"></i>
-              </button>
-              <button
-                className="btn btn-light btn-sm me-2 rounded-circle p-1"
-                onClick={handleNext}
-              >
-                <i className="bi bi-chevron-right"></i>
-              </button>
+  className="btn btn-light btn-sm me-1 custom-circle-btn"
+  onClick={handlePrev}
+>
+  <i className="bi bi-chevron-left"></i>
+</button>
+<button
+  className="btn btn-light btn-sm me-2 custom-circle-btn"
+  onClick={handleNext}
+>
+  <i className="bi bi-chevron-right"></i>
+</button>
             </div>
 
             <span
@@ -102,10 +102,16 @@ const SmallCal = () => {
 
             {/* Dark/Light Mode Toggle */}
             <button
-              className="btn btn-outline-secondary btn-sm ms-auto"
+              className="btn btn-outline-secondary ms-auto d-flex align-items-center justify-content-center"
               onClick={() => setDarkMode(!darkMode)}
+              style={{
+                width: "36px",
+                height: "36px",
+                borderRadius: "50%",
+                padding: 0,
+              }}
             >
-              {darkMode ? "Light Mode" : "Dark Mode"}
+              <i className={`bi ${darkMode ? "bi-sun" : "bi-moon"}`}></i>
             </button>
           </div>
         </div>
