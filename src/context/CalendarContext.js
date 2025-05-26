@@ -8,7 +8,8 @@ export const useCalendar = () => useContext(CalendarContext);
 
 export const CalendarProvider = ({ children }) => {
   const [currentDate, setCurrentDate] = useState(dayjs().startOf("month"));
-  const [theme, setTheme] = useState("light"); // default to light
+  const [theme, setTheme] = useState("light");
+  const [events, setEvents] = useState({}); // ✅ Add this line
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
@@ -23,10 +24,17 @@ export const CalendarProvider = ({ children }) => {
   }, [theme]);
 
   return (
-    <CalendarContext.Provider value={{ currentDate, setCurrentDate, theme, toggleTheme }}>
+    <CalendarContext.Provider
+      value={{
+        currentDate,
+        setCurrentDate,
+        theme,
+        toggleTheme,
+        events,        // ✅ Expose events
+        setEvents,     // ✅ And the setter
+      }}
+    >
       {children}
     </CalendarContext.Provider>
   );
 };
-
-export default CalendarContext;

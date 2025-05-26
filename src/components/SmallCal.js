@@ -1,38 +1,52 @@
-import "../App.css";
-import logo from "../assets/calendarLogo.png";
-import { useCalendar } from "../context/CalendarContext";
+// src/components/SmallCal.js
+import React, { useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
 import weekday from "dayjs/plugin/weekday";
 import isoWeek from "dayjs/plugin/isoWeek";
-import { useEffect, useRef, useState } from "react";
+import "../App.css";
+import logo from "../assets/calendarLogo.png";
+import { useCalendar } from "../context/CalendarContext";
 import Sidebar from "./Sidebar";
+import AllEvents from "./AllEvents";  // Import AllEvents modal
 
 dayjs.extend(weekday);
 dayjs.extend(isoWeek);
 
 const SmallCal = () => {
   const { currentDate, setCurrentDate } = useCalendar();
+
+  // States for mini calendar dropdown
   const [showMiniCal, setShowMiniCal] = useState(false);
   const [miniCalMonth, setMiniCalMonth] = useState(currentDate);
   const [miniCalView, setMiniCalView] = useState("date"); // 'date' | 'month' | 'year'
+
+  // Sidebar open state
   const [showSidebar, setShowSidebar] = useState(false);
+
+  // Dark mode toggle
   const [darkMode, setDarkMode] = useState(false);
+
+  // All Events modal open state
+  const [showAllEvents, setShowAllEvents] = useState(false);
+
   const miniCalRef = useRef(null);
 
+  // Handlers for navigating calendar
   const handleToday = () => setCurrentDate(dayjs().startOf("day"));
   const handlePrev = () => setCurrentDate(currentDate.subtract(1, "month"));
   const handleNext = () => setCurrentDate(currentDate.add(1, "month"));
 
+  // Prepare calendar days for mini calendar dropdown
   const startDay = miniCalMonth.startOf("month").startOf("week");
   const endDay = miniCalMonth.endOf("month").endOf("week");
   const calendarDays = [];
   let day = startDay;
-
   while (day.isBefore(endDay)) {
     calendarDays.push(day.clone());
     day = day.add(1, "day");
   }
 
+  // Close mini calendar dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (miniCalRef.current && !miniCalRef.current.contains(event.target)) {
@@ -44,12 +58,14 @@ const SmallCal = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Toggle dark mode class on body
   useEffect(() => {
     document.body.classList.toggle("dark-mode", darkMode);
   }, [darkMode]);
 
   return (
     <div className="position-relative">
+
       {/* Header */}
       <div className="container-fluid p-2 border-bottom shadow-sm bg-white">
         <div className="row align-items-center">
@@ -59,6 +75,7 @@ const SmallCal = () => {
               style={{ fontSize: "1.2rem", cursor: "pointer" }}
               onClick={() => setShowSidebar(true)}
             ></i>
+
             <img src={logo} alt="Calendar Logo" style={{ height: "24px" }} />
             <span className="fw-bold">calendar</span>
 
@@ -69,15 +86,15 @@ const SmallCal = () => {
               Today
             </button>
 
+            {/* All Events button opens modal */}
             <button
               className="btn btn-outline-primary btn-sm"
-              onClick={() => {
-                console.log("All Events clicked");
-              }}
+              onClick={() => setShowAllEvents(true)}
             >
               All Events
             </button>
 
+            {/* Prev/Next buttons */}
             <div className="d-flex align-items-center ms-2">
               <button
                 className="btn btn-light btn-sm me-1 custom-circle-btn"
@@ -93,6 +110,7 @@ const SmallCal = () => {
               </button>
             </div>
 
+            {/* Current month/year display toggles mini calendar */}
             <span
               className="fw-semibold"
               style={{ cursor: "pointer" }}
@@ -133,6 +151,7 @@ const SmallCal = () => {
             zIndex: 10,
           }}
         >
+          {/* Mini calendar header with prev/next and view toggles */}
           <div className="d-flex justify-content-between align-items-center mb-2">
             <i
               className="bi bi-chevron-left"
@@ -175,7 +194,7 @@ const SmallCal = () => {
             ></i>
           </div>
 
-          {/* Days View */}
+          {/* Mini calendar days view */}
           {miniCalView === "date" && (
             <>
               <div className="d-flex justify-content-between mb-1 text-center fw-bold">
@@ -219,10 +238,23 @@ const SmallCal = () => {
             </>
           )}
 
-          {/* Month View */}
+          {/* Mini calendar month view */}
           {miniCalView === "month" && (
             <div className="d-flex flex-wrap text-center">
-              {dayjs.monthsShort || ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((month, idx) => (
+              {(dayjs.monthsShort() || [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+              ]).map((month, idx) => (
                 <div
                   key={month}
                   className="rounded m-1 p-2"
@@ -231,8 +263,7 @@ const SmallCal = () => {
                     cursor: "pointer",
                     background:
                       idx === miniCalMonth.month() ? "#4A90E2" : "transparent",
-                    color:
-                      idx === miniCalMonth.month() ? "white" : "inherit",
+                    color: idx === miniCalMonth.month() ? "white" : "inherit",
                   }}
                   onClick={() => {
                     setMiniCalMonth(miniCalMonth.month(idx));
@@ -245,7 +276,7 @@ const SmallCal = () => {
             </div>
           )}
 
-          {/* Year View */}
+          {/* Mini calendar year view */}
           {miniCalView === "year" && (
             <div className="d-flex flex-wrap text-center">
               {Array.from({ length: 12 }, (_, i) => {
@@ -277,6 +308,9 @@ const SmallCal = () => {
           )}
         </div>
       )}
+
+      {/* Render AllEvents modal */}
+      {showAllEvents && <AllEvents onClose={() => setShowAllEvents(false)} />}
     </div>
   );
 };

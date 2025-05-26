@@ -11,6 +11,7 @@
     "bootstrap-icons": "^1.13.1",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
+    "lucide-react": "^0.511.0",
     "react": "^19.1.0",
     "react-bootstrap": "^2.10.10",
     "react-calendar": "^5.1.0",
@@ -41,5 +42,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "tailwindcss": "^4.1.7"
   }
 }

@@ -2,14 +2,15 @@ import React, { useState } from "react";
 import dayjs from "dayjs";
 import { useCalendar } from "../context/CalendarContext";
 import SmallCal from "./SmallCal";
+import AllEvents from "./AllEvents";  // <-- Import AllEvents component
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../App.css";
 
 const Calendar = () => {
-  const { currentDate } = useCalendar();
-  const [events, setEvents] = useState({});
+  const { currentDate, events, setEvents } = useCalendar();
   const [selectedDate, setSelectedDate] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showAllEvents, setShowAllEvents] = useState(false); // <-- State for AllEvents modal
   const [eventInput, setEventInput] = useState({
     title: "",
     time: "",
@@ -91,8 +92,8 @@ const Calendar = () => {
       <SmallCal />
 
       <div className="row text-center fw-bold border-bottom week-header">
-        {daysOfWeek.map((d) => (
-          <div key={d} className="col">
+        {daysOfWeek.map((d, i) => (
+          <div key={i} className="col">
             {d}
           </div>
         ))}
@@ -277,6 +278,11 @@ const Calendar = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* All Events Modal */}
+      {showAllEvents && (
+        <AllEvents onClose={() => setShowAllEvents(false)} />
       )}
     </div>
   );

@@ -1,8 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import dayjs from "dayjs";
 import weekday from "dayjs/plugin/weekday";
 import isoWeek from "dayjs/plugin/isoWeek";
 import { useCalendar } from "../context/CalendarContext";
+import EventFormModal from "./EventFormModal";
+import TaskFormModal from "./TaskFormModal";
+import AppointmentFormModal from "./AppointmentFormModal";
+
 import "../App.css";
 
 dayjs.extend(weekday);
@@ -12,19 +16,13 @@ const Sidebar = ({ onClose }) => {
   const { currentDate, setCurrentDate } = useCalendar();
   const [miniCalMonth, setMiniCalMonth] = useState(currentDate);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [viewMode, setViewMode] = useState("calendar"); // calendar | month | year
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [showAppointmentForm, setShowAppointmentForm] = useState(false);
+  const [viewMode, setViewMode] = useState("calendar");
+
   const sidebarRef = useRef(null);
   const dropdownRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
-        onClose();
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [onClose]);
 
   const handleToday = () => {
     const today = dayjs().startOf("day");
@@ -36,7 +34,6 @@ const Sidebar = ({ onClose }) => {
   const endDay = miniCalMonth.endOf("month").endOf("week");
   const calendarDays = [];
   let day = startDay;
-
   while (day.isBefore(endDay)) {
     calendarDays.push(day.clone());
     day = day.add(1, "day");
@@ -83,8 +80,10 @@ const Sidebar = ({ onClose }) => {
   };
 
   const renderMonthPicker = () => {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
     return (
       <div className="d-flex flex-wrap text-center">
         {months.map((month, idx) => (
@@ -98,7 +97,8 @@ const Sidebar = ({ onClose }) => {
               color: miniCalMonth.month() === idx ? "#1a73e8" : "#202124",
               fontWeight: miniCalMonth.month() === idx ? "bold" : "normal",
               borderRadius: "4px",
-              backgroundColor: miniCalMonth.month() === idx ? "#e8f0fe" : "transparent",
+              backgroundColor:
+                miniCalMonth.month() === idx ? "#e8f0fe" : "transparent",
             }}
             onClick={() => {
               setMiniCalMonth(miniCalMonth.month(idx));
@@ -127,7 +127,8 @@ const Sidebar = ({ onClose }) => {
               color: miniCalMonth.year() === year ? "#1a73e8" : "#202124",
               fontWeight: miniCalMonth.year() === year ? "bold" : "normal",
               borderRadius: "4px",
-              backgroundColor: miniCalMonth.year() === year ? "#e8f0fe" : "transparent",
+              backgroundColor:
+                miniCalMonth.year() === year ? "#e8f0fe" : "transparent",
             }}
             onClick={() => {
               setMiniCalMonth(miniCalMonth.year(year));
@@ -143,16 +144,12 @@ const Sidebar = ({ onClose }) => {
 
   return (
     <div className="position-fixed top-0 start-0 w-100 h-100" style={{ zIndex: 1050 }}>
-      {/* Overlay */}
-      <div className="position-absolute top-0 start-0 w-100 h-100" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}></div>
-
-      {/* Sidebar */}
+      <div className="position-absolute top-0 start-0 w-100 h-100" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onClick={onClose}></div>
       <div
         className="bg-white text-dark border-end position-absolute top-0 start-0"
         style={{ width: "280px", height: "100vh", overflowY: "auto" }}
         ref={sidebarRef}
       >
-        {/* Create Dropdown */}
         <div className="px-3 mt-3 mb-2" ref={dropdownRef}>
           <div className="dropdown w-100">
             <button
@@ -168,33 +165,55 @@ const Sidebar = ({ onClose }) => {
 
             {showDropdown && (
               <div className="dropdown-menu show shadow-sm mt-1" style={{ width: "100%", backgroundColor: "#fff", color: "#333" }}>
-                <button className="dropdown-item">Event</button>
-                <button className="dropdown-item">Task</button>
-                <button className="dropdown-item">Appointment schedule</button>
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    setShowDropdown(false);
+                    setShowEventForm(true);
+                  }}
+                >
+                  Event
+                </button>
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    setShowDropdown(false);
+                    setShowTaskForm(true);
+                  }}
+                >
+                  Task
+                </button>
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    setShowDropdown(false);
+                    setShowAppointmentForm(true);
+                  }}
+                >
+                  Appointment schedule
+                </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Today Button */}
         <div className="px-3 mb-3">
           <button className="btn btn-outline-secondary btn-sm w-100" onClick={handleToday}>
             Today
           </button>
         </div>
 
-        {/* Mini Calendar */}
         <div className="px-3">
           {renderMonthYearHeader()}
-
           {viewMode === "calendar" && (
             <>
               <div className="d-flex justify-content-between mb-1 text-center fw-bold">
                 {["S", "M", "T", "W", "T", "F", "S"].map((d) => (
-                  <div key={d} style={{ width: "14.2%" }}>{d}</div>
+                  <div key={d} style={{ width: "14.2%" }}>
+                    {d}
+                  </div>
                 ))}
               </div>
-
               <div className="d-flex flex-wrap text-center">
                 {calendarDays.map((d, i) => {
                   const isToday = d.isSame(dayjs(), "day");
@@ -236,11 +255,14 @@ const Sidebar = ({ onClose }) => {
               </div>
             </>
           )}
-
           {viewMode === "month" && renderMonthPicker()}
           {viewMode === "year" && renderYearPicker()}
         </div>
       </div>
+
+      {showEventForm && <EventFormModal onClose={() => setShowEventForm(false)} />}
+      {showTaskForm && <TaskFormModal onClose={() => setShowTaskForm(false)} />}
+      {showAppointmentForm && <AppointmentFormModal onClose={() => setShowAppointmentForm(false)} />}
     </div>
   );
 };
