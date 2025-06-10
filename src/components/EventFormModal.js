@@ -113,7 +113,7 @@ const EventFormModal = ({ onClose }) => {
               Cancel
             </button>
             <button type="submit" className="btn btn-primary">
-              Save
+              Save 
             </button>
           </div>
         </form>

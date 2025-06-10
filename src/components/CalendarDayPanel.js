@@ -25,9 +25,7 @@ const formatTime = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const parseDateTime = (dateStr, timeStr) =>
   new Date(`${dateStr}T${timeStr}:00`);
 
-// UPDATED formatEventRange function:
 function formatEventRange(start, end) {
-  // Format date like "Saturday 31 May"
   const dateStr = start
     .toLocaleDateString(undefined, {
       weekday: "long",
@@ -59,6 +57,8 @@ export default function GoogleCalendarDayPanel({
   const [dragStartIdx, setDragStartIdx] = useState(null);
   const [dragEndIdx, setDragEndIdx] = useState(null);
   const [creatingEvent, setCreatingEvent] = useState(false);
+  const [editingTime, setEditingTime] = useState(false);
+  const [editingIndex, setEditingIndex] = useState(null);
 
   const [draftEvent, setDraftEvent] = useState({
     title: "",
@@ -79,6 +79,7 @@ export default function GoogleCalendarDayPanel({
         start: newStart,
         end: newEnd,
       });
+      setEditingIndex(null);
       setCreatingEvent(true);
       setDragStartIdx(null);
       setDragEndIdx(null);
@@ -94,11 +95,34 @@ export default function GoogleCalendarDayPanel({
       alert("End date/time must be after start date/time.");
       return;
     }
-    setEvents((prev) => [...prev, draftEvent]);
+
+    if (editingIndex !== null) {
+      setEvents((prev) =>
+        prev.map((ev, i) => (i === editingIndex ? draftEvent : ev))
+      );
+    } else {
+      setEvents((prev) => [...prev, draftEvent]);
+    }
+
     setCreatingEvent(false);
+    setEditingTime(false);
+    setEditingIndex(null);
   };
 
-  const cancelCreate = () => setCreatingEvent(false);
+  const deleteEvent = () => {
+    if (editingIndex !== null) {
+      setEvents((prev) => prev.filter((_, i) => i !== editingIndex));
+      setCreatingEvent(false);
+      setEditingTime(false);
+      setEditingIndex(null);
+    }
+  };
+
+  const cancelCreate = () => {
+    setCreatingEvent(false);
+    setEditingTime(false);
+    setEditingIndex(null);
+  };
 
   const getEventPosition = (ev) => {
     const startDiff = (ev.start - baseDate) / 60000;
@@ -142,28 +166,47 @@ export default function GoogleCalendarDayPanel({
           boxShadow: "inset 0 -1px 0 0 rgb(0 0 0 / 0.1)",
         }}
       >
-        <div style={{ fontWeight: "600", fontSize: 16 }}>{headerDateDisplay}</div>
-        <button
-          aria-label="Close"
-          onClick={onClose}
-          style={{
-            backgroundColor: "transparent",
-            border: "none",
-            cursor: "pointer",
-            width: 32,
-            height: 32,
-          }}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            height="20"
-            width="20"
-            viewBox="0 0 20 20"
-            fill="#5f6368"
+        <div style={{ fontWeight: "600", fontSize: 16 }}>
+          {headerDateDisplay}
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={() => {
+              setDraftEvent({
+                title: "",
+                description: "",
+                start: new Date(baseDate.getTime() + 8 * 60 * 60 * 1000),
+                end: new Date(baseDate.getTime() + 9 * 60 * 60 * 1000),
+              });
+              setCreatingEvent(true);
+              setEditingIndex(null);
+            }}
+            style={{ padding: "4px 8px", fontSize: 13, cursor: "pointer" }}
           >
-            <path d="M14.348 5.652a.5.5 0 00-.707 0L10 9.293 6.36 5.652a.5.5 0 10-.707.707L9.293 10l-3.64 3.64a.5.5 0 00.707.707L10 10.707l3.64 3.64a.5.5 0 00.707-.707L10.707 10l3.64-3.64a.5.5 0 000-.708z" />
-          </svg>
-        </button>
+            + Add New
+          </button>
+          <button
+            aria-label="Close"
+            onClick={onClose}
+            style={{
+              backgroundColor: "transparent",
+              border: "none",
+              cursor: "pointer",
+              width: 32,
+              height: 32,
+            }}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              height="20"
+              width="20"
+              viewBox="0 0 20 20"
+              fill="#5f6368"
+            >
+              <path d="M14.348 5.652a.5.5 0 00-.707 0L10 9.293 6.36 5.652a.5.5 0 10-.707.707L9.293 10l-3.64 3.64a.5.5 0 00.707.707L10 10.707l3.64 3.64a.5.5 0 00.707-.707L10.707 10l3.64-3.64a.5.5 0 000-.708z" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div
@@ -187,13 +230,11 @@ export default function GoogleCalendarDayPanel({
             borderRight: "1px solid #e0e0e0",
             fontWeight: 400,
             color: "#5f6368",
-            userSelect: "none",
           }}
         >
           {Array.from({ length: 24 }, (_, hour) => {
             const h12 = hour % 12 === 0 ? 12 : hour % 12;
             const period = hour < 12 ? "AM" : "PM";
-            const label = `${h12}:00 ${period}`;
             return (
               <div
                 key={hour}
@@ -203,11 +244,8 @@ export default function GoogleCalendarDayPanel({
                   borderBottom: "1px solid #e0e0e0",
                   paddingRight: 8,
                   fontSize: 12,
-                  boxSizing: "border-box",
                 }}
-              >
-                {label}
-              </div>
+              >{`${h12}:00 ${period}`}</div>
             );
           })}
         </div>
@@ -256,6 +294,11 @@ export default function GoogleCalendarDayPanel({
             return (
               <div
                 key={idx}
+                onClick={() => {
+                  setDraftEvent({ ...ev });
+                  setCreatingEvent(true);
+                  setEditingIndex(idx);
+                }}
                 title={`${ev.title}\n${formatEventRange(ev.start, ev.end)}`}
                 style={{
                   position: "absolute",
@@ -272,10 +315,10 @@ export default function GoogleCalendarDayPanel({
                   whiteSpace: "nowrap",
                   textOverflow: "ellipsis",
                   boxShadow: "0 1px 4px rgb(0 0 0 / 0.2)",
-                  userSelect: "none",
+                  cursor: "pointer",
                 }}
               >
-                {ev.title}
+                {ev.title || "(No title)"}
               </div>
             );
           })}
@@ -297,7 +340,7 @@ export default function GoogleCalendarDayPanel({
             zIndex: 100,
           }}
         >
-          <h3 style={{ marginTop: 0, marginBottom: 12 }}>New Event</h3>
+          <h3 style={{ marginTop: 0, marginBottom: 12 }}>Event Details</h3>
 
           <label
             htmlFor="title"
@@ -319,7 +362,6 @@ export default function GoogleCalendarDayPanel({
               borderRadius: 4,
               border: "1px solid #ccc",
               fontSize: 14,
-              boxSizing: "border-box",
             }}
             autoFocus
           />
@@ -346,60 +388,108 @@ export default function GoogleCalendarDayPanel({
               borderRadius: 4,
               border: "1px solid #ccc",
               fontSize: 14,
-              boxSizing: "border-box",
               resize: "vertical",
             }}
           />
 
-          {/* Bottom display: event time range */}
           <div
-            className="text-black"
             style={{
-              marginTop: 5,
+              marginTop: 8,
               padding: "8px 0",
               fontSize: 13,
               fontWeight: 700,
               color: "#555",
               textAlign: "center",
               borderTop: "1px solid #eee",
+              cursor: "pointer",
             }}
+            onClick={() => setEditingTime(true)}
           >
-            {formatEventRange(draftEvent.start, draftEvent.end)}
+            {!editingTime ? (
+              formatEventRange(draftEvent.start, draftEvent.end)
+            ) : (
+              <div
+                style={{ display: "flex", justifyContent: "center", gap: 6 }}
+              >
+                <input
+                  type="time"
+                  value={formatTime(draftEvent.start)}
+                  onChange={(e) =>
+                    setDraftEvent((prev) => ({
+                      ...prev,
+                      start: parseDateTime(
+                        formatDate(prev.start),
+                        e.target.value
+                      ),
+                    }))
+                  }
+                />
+                –
+                <input
+                  type="time"
+                  value={formatTime(draftEvent.end)}
+                  onChange={(e) =>
+                    setDraftEvent((prev) => ({
+                      ...prev,
+                      end: parseDateTime(formatDate(prev.end), e.target.value),
+                    }))
+                  }
+                />
+              </div>
+            )}
           </div>
 
           <div
             style={{
               marginTop: 16,
               display: "flex",
-              justifyContent: "flex-end",
+              justifyContent: "space-between",
               gap: 12,
             }}
           >
-            <button
-              onClick={cancelCreate}
-              style={{
-                padding: "6px 12px",
-                backgroundColor: "#e0e0e0",
-                border: "none",
-                borderRadius: 4,
-                cursor: "pointer",
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={saveEvent}
-              style={{
-                padding: "6px 12px",
-                backgroundColor: "#4285f4",
-                border: "none",
-                borderRadius: 4,
-                color: "white",
-                cursor: "pointer",
-              }}
-            >
-              Save
-            </button>
+            {editingIndex !== null && (
+              <button
+                onClick={deleteEvent}
+                style={{
+                  padding: "6px 12px",
+                  backgroundColor: "#f44336",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 4,
+                  cursor: "pointer",
+                }}
+              >
+                Delete
+              </button>
+            )}
+
+            <div style={{ display: "flex", gap: 12, marginLeft: "auto" }}>
+              <button
+                onClick={cancelCreate}
+                style={{
+                  padding: "6px 12px",
+                  backgroundColor: "#e0e0e0",
+                  border: "none",
+                  borderRadius: 4,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveEvent}
+                style={{
+                  padding: "6px 12px",
+                  backgroundColor: "#4285f4",
+                  border: "none",
+                  borderRadius: 4,
+                  color: "white",
+                  cursor: "pointer",
+                }}
+              >
+                {editingIndex !== null ? "Update" : "Save"}
+              </button>
+            </div>
           </div>
         </div>
       )}
