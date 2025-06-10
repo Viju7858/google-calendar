@@ -60,7 +60,10 @@ const SmallCal = () => {
       {/* Header */}
       <div className="container-fluid p-2 border-bottom shadow-sm bg-white">
         <div className="row align-items-center">
-          <div style={{gap:"2px"}} className="col-12 d-flex flex-wrap align-items-center">
+          <div
+            style={{ gap: "2px" }}
+            className="col-12 d-flex flex-wrap align-items-center"
+          >
             <i
               className="bi bi-list"
               style={{ fontSize: "1.2rem", cursor: "pointer" }}
