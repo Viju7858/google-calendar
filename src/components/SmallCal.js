@@ -12,28 +12,27 @@ import AllEvents from "./AllEvents"; // Import AllEvents modal
 dayjs.extend(weekday);
 dayjs.extend(isoWeek);
 
+const shortMonths = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
+
 const SmallCal = () => {
   const { currentDate, setCurrentDate } = useCalendar();
 
-  // States for mini calendar dropdown
   const [showMiniCal, setShowMiniCal] = useState(false);
   const [miniCalMonth, setMiniCalMonth] = useState(currentDate);
-  const [miniCalView, setMiniCalView] = useState("date"); // 'date' | 'month' | 'year'
+  const [miniCalView, setMiniCalView] = useState("date");
 
-  // Sidebar open state
   const [showSidebar, setShowSidebar] = useState(false);
-
-  // All Events modal open state
   const [showAllEvents, setShowAllEvents] = useState(false);
 
   const miniCalRef = useRef(null);
 
-  // Handlers for navigating calendar
   const handleToday = () => setCurrentDate(dayjs().startOf("day"));
   const handlePrev = () => setCurrentDate(currentDate.subtract(1, "month"));
   const handleNext = () => setCurrentDate(currentDate.add(1, "month"));
 
-  // Prepare calendar days for mini calendar dropdown
   const startDay = miniCalMonth.startOf("month").startOf("week");
   const endDay = miniCalMonth.endOf("month").endOf("week");
   const calendarDays = [];
@@ -43,7 +42,6 @@ const SmallCal = () => {
     day = day.add(1, "day");
   }
 
-  // Close mini calendar dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (miniCalRef.current && !miniCalRef.current.contains(event.target)) {
@@ -80,7 +78,6 @@ const SmallCal = () => {
               Today
             </button>
 
-            {/* All Events button opens modal */}
             <button
               className="btn btn-outline-primary btn-sm"
               onClick={() => setShowAllEvents(true)}
@@ -88,7 +85,6 @@ const SmallCal = () => {
               All Events
             </button>
 
-            {/* Prev/Next buttons */}
             <div className="d-flex align-items-center ms-2">
               <button
                 className="btn btn-light btn-sm me-1 custom-circle-btn"
@@ -104,22 +100,19 @@ const SmallCal = () => {
               </button>
             </div>
 
-            {/* Current month/year display toggles mini calendar */}
             <span
               className="fw-semibold"
               style={{ cursor: "pointer" }}
               onClick={() => setShowMiniCal(!showMiniCal)}
             >
-              {currentDate.format("MMMM YYYY")}
+              {shortMonths[currentDate.month()]} {currentDate.year()}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Sidebar */}
       {showSidebar && <Sidebar onClose={() => setShowSidebar(false)} />}
 
-      {/* Mini Calendar Dropdown */}
       {showMiniCal && (
         <div
           ref={miniCalRef}
@@ -131,7 +124,7 @@ const SmallCal = () => {
             zIndex: 10,
           }}
         >
-          {/* Mini calendar header with prev/next and view toggles */}
+          {/* Header in mini calendar */}
           <div className="d-flex justify-content-between align-items-center mb-2">
             <i
               className="bi bi-chevron-left"
@@ -154,7 +147,7 @@ const SmallCal = () => {
               }}
             >
               {miniCalView === "date"
-                ? miniCalMonth.format("MMMM YYYY")
+                ? `${shortMonths[miniCalMonth.month()]} ${miniCalMonth.year()}`
                 : miniCalView === "month"
                 ? miniCalMonth.format("YYYY")
                 : `${miniCalMonth.year() - 6} - ${miniCalMonth.year() + 5}`}
@@ -174,7 +167,6 @@ const SmallCal = () => {
             ></i>
           </div>
 
-          {/* Mini calendar days view */}
           {miniCalView === "date" && (
             <>
               <div className="d-flex justify-content-between mb-1 text-center fw-bold">
@@ -218,25 +210,9 @@ const SmallCal = () => {
             </>
           )}
 
-          {/* Mini calendar month view */}
           {miniCalView === "month" && (
             <div className="d-flex flex-wrap text-center">
-              {(
-                dayjs.monthsShort() || [
-                  "Jan",
-                  "Feb",
-                  "Mar",
-                  "Apr",
-                  "May",
-                  "Jun",
-                  "Jul",
-                  "Aug",
-                  "Sep",
-                  "Oct",
-                  "Nov",
-                  "Dec",
-                ]
-              ).map((month, idx) => (
+              {shortMonths.map((month, idx) => (
                 <div
                   key={month}
                   className="rounded m-1 p-2"
@@ -258,7 +234,6 @@ const SmallCal = () => {
             </div>
           )}
 
-          {/* Mini calendar year view */}
           {miniCalView === "year" && (
             <div className="d-flex flex-wrap text-center">
               {Array.from({ length: 12 }, (_, i) => {
@@ -290,7 +265,6 @@ const SmallCal = () => {
         </div>
       )}
 
-      {/* Render AllEvents modal */}
       {showAllEvents && <AllEvents onClose={() => setShowAllEvents(false)} />}
     </div>
   );
