@@ -7,7 +7,7 @@ import "../App.css";
 import logo from "../assets/calendarLogo.png";
 import { useCalendar } from "../context/CalendarContext";
 import Sidebar from "./Sidebar";
-import AllEvents from "./AllEvents";  // Import AllEvents modal
+import AllEvents from "./AllEvents"; // Import AllEvents modal
 
 dayjs.extend(weekday);
 dayjs.extend(isoWeek);
@@ -22,9 +22,6 @@ const SmallCal = () => {
 
   // Sidebar open state
   const [showSidebar, setShowSidebar] = useState(false);
-
-  // Dark mode toggle
-  const [darkMode, setDarkMode] = useState(false);
 
   // All Events modal open state
   const [showAllEvents, setShowAllEvents] = useState(false);
@@ -58,18 +55,12 @@ const SmallCal = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Toggle dark mode class on body
-  useEffect(() => {
-    document.body.classList.toggle("dark-mode", darkMode);
-  }, [darkMode]);
-
   return (
     <div className="position-relative">
-
       {/* Header */}
       <div className="container-fluid p-2 border-bottom shadow-sm bg-white">
         <div className="row align-items-center">
-          <div className="col-12 d-flex flex-wrap align-items-center gap-2">
+          <div style={{gap:"2px"}} className="col-12 d-flex flex-wrap align-items-center">
             <i
               className="bi bi-list"
               style={{ fontSize: "1.2rem", cursor: "pointer" }}
@@ -118,20 +109,6 @@ const SmallCal = () => {
             >
               {currentDate.format("MMMM YYYY")}
             </span>
-
-            {/* Dark/Light Mode Toggle */}
-            <button
-              className="btn btn-outline-secondary ms-auto d-flex align-items-center justify-content-center"
-              onClick={() => setDarkMode(!darkMode)}
-              style={{
-                width: "36px",
-                height: "36px",
-                borderRadius: "50%",
-                padding: 0,
-              }}
-            >
-              <i className={`bi ${darkMode ? "bi-sun" : "bi-moon"}`}></i>
-            </button>
           </div>
         </div>
       </div>
@@ -241,20 +218,22 @@ const SmallCal = () => {
           {/* Mini calendar month view */}
           {miniCalView === "month" && (
             <div className="d-flex flex-wrap text-center">
-              {(dayjs.monthsShort() || [
-                "Jan",
-                "Feb",
-                "Mar",
-                "Apr",
-                "May",
-                "Jun",
-                "Jul",
-                "Aug",
-                "Sep",
-                "Oct",
-                "Nov",
-                "Dec",
-              ]).map((month, idx) => (
+              {(
+                dayjs.monthsShort() || [
+                  "Jan",
+                  "Feb",
+                  "Mar",
+                  "Apr",
+                  "May",
+                  "Jun",
+                  "Jul",
+                  "Aug",
+                  "Sep",
+                  "Oct",
+                  "Nov",
+                  "Dec",
+                ]
+              ).map((month, idx) => (
                 <div
                   key={month}
                   className="rounded m-1 p-2"
@@ -292,8 +271,7 @@ const SmallCal = () => {
                         year === miniCalMonth.year()
                           ? "#4A90E2"
                           : "transparent",
-                      color:
-                        year === miniCalMonth.year() ? "white" : "inherit",
+                      color: year === miniCalMonth.year() ? "white" : "inherit",
                     }}
                     onClick={() => {
                       setMiniCalMonth(miniCalMonth.year(year));
